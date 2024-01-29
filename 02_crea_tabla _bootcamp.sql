@@ -516,7 +516,7 @@ BY	 student.student_id
 ORDER BY student_cte.rankin
 
 
--- listado de todas los bootcamps y sus asignaturas.
+-- Listado de todas los bootcamps y sus asignaturas.
 SELECT bootcamp."name"
 	, subject."name"
 FROM bootcamp
@@ -528,7 +528,7 @@ ORDER BY bootcamp.bootcamp_id
 
 
 
--- listado de todas los bootcamps y sus profesores con nombre, apellido e email
+-- Listado de todas los bootcamps y sus profesores con nombre, apellido e email
 SELECT bootcamp."name"
 	, teacher."name"
 	,teacher.surname
@@ -540,7 +540,7 @@ JOIN teacher
 on teacher.teacher_id = bootcamp_teacher.teacher_id
 ORDER BY bootcamp.bootcamp_id
 
--- listado de todas los bootcamps, nombre y numero de alumnos
+-- Listado de todas los bootcamps, nombre y numero de alumnos
 
 SELECT bootcamp.bootcamp_id
 	, bootcamp."name"

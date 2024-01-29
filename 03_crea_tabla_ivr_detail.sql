@@ -7,7 +7,7 @@ SELECT calls.ivr_id AS calls_ivr_id
       ,ivr_result AS calls_ivr_result
       ,vdn_label AS calls_vdn_label
       ,start_date AS calls_start_date
-      ,FORMAT_DATE('%Y%m%d', start_date) AS calls_start_date_id
+      ,FORMAT_DATE('%Y%m%d', start_date) AS calls_start_date_id -- Formateo de fecha
       ,end_date AS calls_end_date
       ,FORMAT_DATE('%Y%m%d', end_date) AS calls_end_date_id
       ,total_duration AS calls_total_duration

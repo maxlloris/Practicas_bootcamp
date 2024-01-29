@@ -1,6 +1,6 @@
 -- 04_crea_tabla_ivr_summary
 
-CREATE OR REPLACE TABLE keepcoding.ivr_summary2 AS
+CREATE OR REPLACE TABLE keepcoding.ivr_summary AS
 
 WITH inf_doc -- En esta funcion, ranguemos por el modulo y el paso dentro del mismo para quedarnos con el ultimo paso del ultimo modulo que no contenga 'UNKNOWN' o 'DESCONOCIDO'. Este criterio de que fuera el ultimo muy probablemente lo deduciriamos en cosultas con nuestro cliente
       AS (SELECT ivr_id
