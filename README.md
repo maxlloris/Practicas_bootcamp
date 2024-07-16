@@ -1,4 +1,4 @@
-# PRACTICA MODULO SQL AVANZADO, DW Y BIGQUERY
+# PROYECTO MODULO SQL AVANZADO, DW Y BIGQUERY
 
 El enunciado de la práctica que nos ocupa, se componia de varias apartados a los cuales, les he dado respuesta con los siguientes archivos:
 
