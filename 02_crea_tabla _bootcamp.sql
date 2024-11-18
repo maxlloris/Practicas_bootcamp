@@ -410,10 +410,13 @@ INSERT INTO bootcamp_subject (bootcamp_id, subject_id ) VALUES
 (9,36),
 (10,36);
 
------------------------------------------------------- CONSULTAS VARIAS A LAS DISTINTAS TABLAS
+-- CONSULTAS VARIAS A LAS DISTINTAS TABLAS
 
--- Informacion completa de cada uno de los Bootcamps ( Nombre, precio, duracion, nº profesores, nº alumnos, nº asignaturas, nombres apellidos y datos alumnos y profesores)
-
+-- Informacion completa de cada uno de los Bootcamps:
+-- ID, nombre, precio y duración del bootcamp.
+-- Número total de estudiantes y lista de estudiantes con sus datos de contacto.
+-- Número total de asignaturas y lista de asignaturas..
+-- Número total de profesores y lista de profesores con sus datos de contacto.
 WITH student_cte
 	AS(SELECT bootcamp.bootcamp_id
 			, bootcamp."name"
@@ -431,8 +434,8 @@ WITH student_cte
 	, subjects_cte
 	AS(SELECT bootcamp.bootcamp_id
 			, bootcamp.name
-			, count(subject) AS n_subject
-			, STRING_AGG(subject.name, ' | ' ORDER by subject.name) AS subjects
+			, count(DISTINCT subject.subject_id) AS n_subject
+			, STRING_AGG(DISTINCT subject.name, ' | ' ORDER by subject.name) AS subjects -- Obtengo el nombre de cada asignatura evitando duplicados
 		FROM subject
 		JOIN bootcamp_subject
 		ON bootcamp_subject.subject_id = subject.subject_id
@@ -449,7 +452,7 @@ SELECT bootcamp.bootcamp_id AS id
 	, count(teacher.teacher_id) as Nº_teachers
 	, student_cte.student_count AS Nº_students
 	, subjects_cte.n_subject AS Nº_subjects
-	, ARRAY_AGG(CONCAT(teacher.name, ' ', teacher.surname, ' PHONE ',teacher.phone )  ORDER BY teacher.name) AS teachers_data
+	, ARRAY_AGG(DISTINCT CONCAT(teacher.name, ' ', teacher.surname, ' PHONE ',teacher.phone )) AS teachers_data
 	, student_cte.students AS student_data
 	, subjects_cte.subjects
 FROM bootcamp
@@ -477,10 +480,15 @@ GROUP by bootcamp.bootcamp_id
 order by bootcamp.bootcamp_id
 
 
--- Informacion completa de alumnos
+-- Informacion completa de alumnos:
+-- ID, nombre, apellidos y correo electrónico.
+-- Ranking basado en la duración total y el coste total de los bootcamps.
+-- Número total de bootcamps, duración total en meses, e inversión económica total.
+-- Lista de bootcamps, fechas de inicio, duraciones y fechas de finalización, todo concatenado y separado por ' / '.
+-- Los resultados están ordenados por ranking en orden descendente.
 WITH student_cte
 	AS(SELECT student.student_id AS student_id
-			, ROW_NUMBER() OVER(ORDER BY (SUM(bootcamp.duration))DESC, (SUM(bootcamp.price))DESC) AS rankin
+			, ROW_NUMBER() OVER(ORDER BY (SUM(bootcamp.duration))DESC, (SUM(bootcamp.price))DESC) AS rankin -- Genero rankin de duracion y de inversion economica
 		FROM student
 		JOIN student_bootcamp
 		ON student.student_id = student_bootcamp.student_id
@@ -488,25 +496,38 @@ WITH student_cte
 		on bootcamp.bootcamp_id = student_bootcamp.bootcamp_id
 		GROUP BY student.student_id)
 
+	, bootcamp_dates_cte AS (
+    SELECT student.student_id
+         , bootcamp.bootcamp_id
+         , bootcamp.name AS bootcamp_name
+         , bootcamp.price AS bootcamp_price
+         , bootcamp.duration AS bootcamp_duration
+         , student_bootcamp.order_date
+         , TO_CHAR(student_bootcamp.order_date + INTERVAL '1 month' * bootcamp.duration, 'YYYY-MM-DD') AS end_date
+    FROM student
+    JOIN student_bootcamp
+        ON student.student_id = student_bootcamp.student_id
+    JOIN bootcamp
+        ON bootcamp.bootcamp_id = student_bootcamp.bootcamp_id)
+
 SELECT student.student_id as id
 	, student_cte.rankin
 	, student.name
 	, student.surname
 	, student.email
-	, COUNT(bootcamp.bootcamp_id) AS n_form
-	, SUM(bootcamp.duration) AS time
-	, SUM(bootcamp.price) AS invest
-	, STRING_AGG(CAST(student_bootcamp.order_date AS VARCHAR(10)), ' / ') AS date_beginning
-	--Otra columna con la suma de la duracion del boocamp a la fecha de inicio del alumno y hacer un STRING_AGG.
-	, STRING_AGG(bootcamp.name, ' / ') AS Bootcamps
+	, COUNT(bootcamp_dates_cte.bootcamp_id) AS n_form -- Obtengo el numero total formaciones realizadas
+	, SUM(bootcamp_dates_cte.bootcamp_duration) AS total_months_duration -- Obtengo la duracion completa de la formación
+	, SUM(bootcamp_dates_cte.bootcamp_price) AS economic_invest -- Obtengo la inversion economica total de cada alumno
+	, STRING_AGG(bootcamp_dates_cte.bootcamp_name, ' / ') AS bootcamps -- Obtengo el nombre formaciones realizadas
+	, STRING_AGG(CAST(bootcamp_dates_cte.order_date AS VARCHAR(10)), ' / ') AS start_dates -- Obtengo las fechas de comienzo de cada bootcamp
+	, STRING_AGG(CAST(bootcamp_dates_cte.bootcamp_duration AS VARCHAR), ' / ') AS durations -- Obtengo la duración de cada bootcamp
+    , STRING_AGG(CAST(bootcamp_dates_cte.end_date AS VARCHAR), ' / ') AS end_dates -- Obtengo las fechas de finalizacion de cada bootcamp
 
 FROM student
-JOIN student_bootcamp
-ON student.student_id = student_bootcamp.student_id
-JOIN bootcamp
-ON bootcamp.bootcamp_id = student_bootcamp.bootcamp_id
-JOIN student_cte 
-ON student.student_id = student_cte.student_id
+JOIN bootcamp_dates_cte
+    ON student.student_id = bootcamp_dates_cte.student_id
+JOIN student_cte
+    ON student.student_id = student_cte.student_id
 GROUP
 BY	 student.student_id
 	, student.name
@@ -637,7 +658,7 @@ GROUP by subject."name"
 	, bootcamp."name"
 order by subject.subject_id
 
--- DUDA --> No se realizar la misma consulta anterior pero buscando por nombre de bootcamp en lugar de por bootcamp_id es decir esto:
+-- Asignaturas correspondiente a un bootcamp en concreto seleccionado por el bootcamp_name (devuelve el nombre de la asignatura y el bootcamp al que pertenece)
 
 SELECT subject.name
 	, bootcamp."name"
@@ -646,7 +667,7 @@ JOIN bootcamp_subject
 ON subject.subject_id = bootcamp_subject.subject_id
 JOIN bootcamp
 on bootcamp.bootcamp_id = bootcamp_subject.bootcamp_id
-where bootcamp."name" = 'Big data' -- error en esta linea
+where LOWER(bootcamp."name") = LOWER('Big data')
 GROUP by subject."name"
 	, subject.subject_id
 	, bootcamp."name"

@@ -2,7 +2,11 @@
 
 CREATE OR REPLACE TABLE keepcoding.ivr_summary AS
 
-WITH inf_doc -- En esta funcion, ranguemos por el modulo y el paso dentro del mismo para quedarnos con el ultimo paso del ultimo modulo que no contenga 'UNKNOWN' o 'DESCONOCIDO'. Este criterio de que fuera el ultimo muy probablemente lo deduciriamos en cosultas con nuestro cliente
+WITH inf_doc 
+            -- La CTE "inf_doc" selecciona el último paso del último módulo para cada "ivr_id" en la tabla `keepcoding.ivr_steps`.
+            -- Se excluyen registros donde "document_type" o "document_identification" tengan valores desconocidos ('DESCONOCIDO' o 'UNKNOWN').
+            -- Para determinar el último paso, se utiliza la función ROW_NUMBER(), que asigna un rango basado en el orden descendente
+            -- de "module_sequence" y "step_sequence". Esto asegura que se selecciona el paso más reciente dentro del módulo más reciente.
       AS (SELECT ivr_id
             ,document_type
             ,document_identification
